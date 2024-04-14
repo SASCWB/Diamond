@@ -1,0 +1,334 @@
+import numpy as np
+import pandas as pd
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, LSTM, Dropout
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
+import matplotlib.pyplot as plt
+from sklearn.metrics import r2_score
+from tensorflow.keras.optimizers import Adam
+from sklearn.model_selection import GridSearchCV
+from sklearn.pipeline import Pipeline
+from sklearn.model_selection import GridSearchCV
+from tensorflow.keras.wrappers.scikit_learn import KerasRegressor
+
+# Função para criar modelo
+def create_model(neurons=120, optimizer='adam', dropout_rate=0.25, reg_strength=0.01):
+    model = Sequential()
+    model.add(LSTM(neurons, return_sequences=True, input_shape=(X_train.shape[1], X_train.shape[2]), kernel_regularizer='l2'))
+    model.add(Dropout(dropout_rate))
+    model.add(LSTM(neurons // 2, return_sequences=True, kernel_regularizer='l2'))
+    model.add(Dropout(dropout_rate))
+    model.add(LSTM(neurons // 4, kernel_regularizer='l2'))
+    model.add(Dropout(dropout_rate))
+    model.add(Dense(20, activation='relu'))
+    model.add(Dense(10, activation='relu'))
+    model.add(Dense(1))
+    model.compile(optimizer=optimizer, loss='mean_squared_error')
+    return model
+
+# Definir grade de hiperparâmetros
+param_grid = {
+    'model__neurons': [64, 128, 256],
+    'model__dropout_rate': [0.1, 0.2, 0.3],
+    'model__reg_strength': [0.01, 0.001, 0.0001],
+    'model__optimizer': ['adam', 'rmsprop']
+}
+
+# Criar pipeline com scaler e modelo
+pipeline = Pipeline([
+    ('scaler', StandardScaler()),
+    ('model', KerasRegressor(build_fn=create_model, verbose=0))
+])
+
+# Executar busca em grade
+grid = GridSearchCV(estimator=pipeline, param_grid=param_grid, cv=3, scoring='r2')
+grid_result = grid.fit(X_train, y_train)
+
+# Imprimir melhores resultados
+print("Melhores hiperparâmetros encontrados: ", grid_result.best_params_)
+print("Melhor R^2 encontrado: ", grid_result.best_score_)
+
+
+# Especifique o caminho do arquivo corretamente
+caminho_do_arquivo = 'C:/Investimentos/IA/dados de testes/EURUSD.csv'
+
+# Leia o arquivo CSV
+data = pd.read_csv(caminho_do_arquivo, parse_dates=['Date'])
+
+# Carregar dados
+data.set_index('Date', inplace=True)
+
+# Selecionar colunas relevantes
+features = data[['Open', 'High', 'Low', 'Close']].values
+
+# Normalizar dados
+scaler = MinMaxScaler(feature_range=(0, 1))
+features_scaled = scaler.fit_transform(features)
+
+# Função para criar dataset
+def create_dataset(X, y, time_steps=1):
+    Xs, ys = [], []
+    for i in range(len(X) - time_steps):
+        v = X[i:(i + time_steps)]
+        Xs.append(v)
+        ys.append(y[i + time_steps])
+    return np.array(Xs), np.array(ys)
+
+time_steps = 10
+X, y = create_dataset(features_scaled, features_scaled[:, 3], time_steps)
+
+# Dividir dados em treino e teste
+split = int(len(X) * 0.8)
+X_train, X_test = X[:split], X[split:]
+y_train, y_test = y[:split], y[split:]
+
+# Criar modelo KerasRegressor
+model = create_model()
+
+# Definir grade de hiperparâmetros
+param_grid = {
+    'neurons': [64, 128, 256],
+    'reg_strength': [0.01, 0.001, 0.0001],
+    'optimizer': ['adam', 'rmsprop']
+}
+
+# Criar pipeline com scaler e modelo
+pipeline = Pipeline([
+    ('scaler', StandardScaler()),
+    ('model', model)
+])
+
+# Executar busca em grade
+grid = GridSearchCV(estimator=pipeline, param_grid=param_grid, cv=3, scoring='r2')
+grid_result = grid.fit(X_train, y_train)
+
+# Imprimir melhores resultados
+print("Melhores hiperparâmetros encontrados: ", grid_result.best_params_)
+print("Melhor R^2 encontrado: ", grid_result.best_score_)
+
+# Função para criar modelo
+def create_model(optimizer='adam', neurons=120, reg_strength=0.01):
+    model = Sequential()
+    model.add(LSTM(neurons, return_sequences=True, input_shape=(X_train.shape[1], X_train.shape[2]), kernel_regularizer='l2'))
+    model.add(Dropout(0.25))
+    model.add(LSTM(neurons // 2, return_sequences=True, kernel_regularizer='l2'))
+    model.add(Dropout(0.25))
+    model.add(LSTM(neurons // 4, kernel_regularizer='l2'))
+    model.add(Dropout(0.25))
+    model.add(Dense(20, activation='relu'))
+    model.add(Dense(10, activation='relu'))
+    model.add(Dense(1))
+    model.compile(optimizer=optimizer, loss='mean_squared_error')
+    return model
+
+# Especifique o caminho do arquivo corretamente
+caminho_do_arquivo = 'C:/Investimentos/IA/dados de testes/EURUSD.csv'
+
+# Leia o arquivo CSV
+data = pd.read_csv(caminho_do_arquivo, parse_dates=['Date'])
+
+# Exiba as primeiras linhas do DataFrame para verificar se os dados foram lidos corretamente
+print(data.head())
+
+# Carregar dados
+data = pd.read_csv('C:/Investimentos/IA/dados de testes/EURUSD.csv', parse_dates=['Date'])
+data.set_index('Date', inplace=True)
+
+# Selecionar colunas relevantes
+features = data[['Open', 'High', 'Low', 'Close']].values
+
+# Normalizar dados
+scaler = MinMaxScaler(feature_range=(0, 1))
+features_scaled = scaler.fit_transform(features)
+
+# Função para criar dataset
+def create_dataset(X, y, time_steps=1):
+    Xs, ys = [], []
+    for i in range(len(X) - time_steps):
+        v = X[i:(i + time_steps)]
+        Xs.append(v)
+        ys.append(y[i + time_steps])
+    return np.array(Xs), np.array(ys)
+
+time_steps = 10
+X, y = create_dataset(features_scaled, features_scaled[:, 3], time_steps)
+
+# Dividir dados em treino e teste
+split = int(len(X) * 0.8)
+X_train, X_test = X[:split], X[split:]
+y_train, y_test = y[:split], y[split:]
+
+# Criar modelo KerasRegressor
+model = KerasRegressor(build_fn=create_model, verbose=0)
+
+# Definir grade de hiperparâmetros
+param_grid = {
+    'neurons': [64, 128, 256],
+    'dropout_rate': [0.1, 0.2, 0.3],
+    'reg_strength': [0.01, 0.001, 0.0001],
+    'optimizer': ['adam', 'rmsprop']
+}
+
+# Criar pipeline com scaler e modelo
+pipeline = Pipeline([
+    ('scaler', StandardScaler()),
+    ('model', model)
+])
+
+# Executar busca em grade
+grid = GridSearchCV(estimator=pipeline, param_grid=param_grid, cv=3, scoring='r2')
+grid_result = grid.fit(X_train, y_train)
+
+# Imprimir melhores resultados
+print("Melhores hiperparâmetros encontrados: ", grid_result.best_params_)
+print("Melhor R^2 encontrado: ", grid_result.best_score_)
+
+# Crie seu modelo
+model = Sequential()
+
+# Adicione as camadas desejadas ao seu modelo
+model.add(Dense(80, activation='relu', input_shape=(X_train.shape[1],)))
+model.add(Dropout(0.2)) # Adicionando uma camada Dropout
+model.add(Dense(64, activation='relu', kernel_regularizer='l2')) # Adicionando uma camada de regularização L2
+model.add(Dense(128, activation='relu')) # Ajustando o número de neurônios em uma camada
+model.add(Dense(5, activation='linear'))
+
+# Crie um otimizador com a taxa de aprendizado desejada
+optimizer = Adam(learning_rate=0.008)
+
+# Compile seu modelo usando o otimizador personalizado e a função de perda desejada
+model.compile(optimizer=optimizer, loss='mean_squared_error')
+
+# Criar e treinar a rede LSTM com regularização
+model_lstm = Sequential()
+model_lstm.add(LSTM(150, return_sequences=True, input_shape=(X_train.shape[1], X_train.shape[2]), kernel_regularizer='l2'))
+model_lstm.add(Dropout(0.25))
+model_lstm.add(LSTM(100, return_sequences=True, kernel_regularizer='l2'))
+model_lstm.add(Dropout(0.25))
+model_lstm.add(LSTM(50, kernel_regularizer='l2'))
+model_lstm.add(Dropout(0.25))
+model_lstm.add(Dense(20, activation='relu'))
+model_lstm.add(Dense(10, activation='relu'))
+model_lstm.add(Dense(1))
+model_lstm.compile(optimizer='adam', loss='mean_squared_error')
+
+# Treinamento do modelo com acompanhamento das métricas de validação
+history = model_lstm.fit(X_train, y_train, epochs=10, batch_size=32, verbose=1, validation_split=0.1)
+
+# Plotar a curva de aprendizado
+plt.plot(history.history['loss'], label='train')
+plt.plot(history.history['val_loss'], label='validation')
+plt.title('Model Loss')
+plt.ylabel('Loss')
+plt.xlabel('Epoch')
+plt.legend()
+plt.show()
+
+# Fazer previsões
+predicted_price_normalized = model_lstm.predict(X_test)
+predicted_price_original = predicted_price_normalized * (scaler.data_max_[3] - scaler.data_min_[3]) + scaler.data_min_[3]
+predicted_price = model_lstm.predict(X_test)
+
+# Avaliar o modelo
+real_price_normalized = y_test.reshape(-1, 1)
+real_price_original = real_price_normalized * (scaler.data_max_[3] - scaler.data_min_[3]) + scaler.data_min_[3]
+real_price = real_price_original
+
+# Calculando o coeficiente de determinação (R^2)
+r2 = r2_score(real_price, predicted_price)
+print("Coeficiente de determinação (R^2):", r2)
+
+# Plotar previsões vs preços reais
+plt.plot(predicted_price_original, label='Predicted Price')
+plt.plot(real_price_original, label='Real Price')
+plt.title('Predicted vs Real Price')
+plt.xlabel('Time')
+plt.ylabel('Price')
+plt.legend()
+plt.show()
+
+# Plotar diferença entre previsões e preços reais
+plt.plot(predicted_price_original - real_price_original, label='Difference')
+plt.title('Difference between Predicted and Real Price')
+plt.xlabel('Time')
+plt.ylabel('Difference')
+plt.legend()
+plt.show()
+
+# Extrair as métricas de treinamento e validação do histórico
+train_loss = history.history['loss']
+val_loss = history.history['val_loss']
+epochs = range(1, len(train_loss) + 1)
+
+# Plotar a curva de aprendizado
+plt.plot(epochs, train_loss, 'bo', label='Training loss')
+plt.plot(epochs, val_loss, 'r', label='Validation loss')
+plt.title('Training and validation loss')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.legend()
+plt.show()
+
+# Estender o conjunto de dados de entrada para incluir as previsões futuras
+X_extended = np.copy(X)
+for i in range(30):
+    # Prever o próximo ponto com base no último ponto disponível
+    next_prediction = model_lstm.predict(X_extended[-1].reshape(1, time_steps, X_train.shape[2]))
+
+    # Adicionar a próxima previsão ao conjunto de dados estendido
+    new_row = np.zeros((1, time_steps, X_train.shape[2]))
+    new_row[0, :-1, :] = X_extended[-1, 1:, :]
+    new_row[0, -1, 3] = next_prediction  # Supondo que a coluna 3 é o preço de fechamento
+    X_extended = np.append(X_extended, new_row, axis=0)
+
+# Inverter a escala das previsões
+# Criar um array completo com zeros para todas as colunas
+full_data = np.zeros((X_extended.shape[0], features_scaled.shape[1]))
+# Substituir a coluna do preço de fechamento pela previsão estendida
+full_data[:, 3] = X_extended[:, -1, 3]  # Ajuste o índice da coluna conforme necessário
+
+# Agora inverter a escala usando o scaler ajustado aos dados originais
+predicted_prices_extended = scaler.inverse_transform(full_data)[:, 3]  # Obter apenas a coluna do preço 
+
+# Agora você pode usar `predicted_prices_extended` para suas análises ou visualizações
+
+r2_abs = abs(r2)
+print("Valor absoluto do coeficiente de determinação (R^2):", r2_abs)
+
+from sklearn.model_selection import GridSearchCV
+from tensorflow.keras.wrappers.scikit_learn import KerasRegressor
+
+# Função para criar modelo
+def create_model(optimizer='adam', neurons=120, dropout_rate=0.25, reg_strength=0.01):
+    model = Sequential()
+    model.add(LSTM(neurons, return_sequences=True, input_shape=(X_train.shape[1], X_train.shape[2]), kernel_regularizer='l2'))
+    model.add(Dropout(dropout_rate))
+    model.add(LSTM(neurons // 2, return_sequences=True, kernel_regularizer='l2'))
+    model.add(Dropout(dropout_rate))
+    model.add(LSTM(neurons // 4, kernel_regularizer='l2'))
+    model.add(Dropout(dropout_rate))
+    model.add(Dense(20, activation='relu'))
+    model.add(Dense(10, activation='relu'))
+    model.add(Dense(1))
+    model.compile(optimizer=optimizer, loss='mean_squared_error')
+    return model
+
+# Criar modelo KerasRegressor
+model = KerasRegressor(build_fn=create_model, verbose=0)
+
+
+# Definir grade de hiperparâmetros
+param_grid = {
+    'neurons': [64, 128, 256],
+    'dropout_rate': [0.1, 0.2, 0.3],
+    'reg_strength': [0.01, 0.001, 0.0001],
+    'optimizer': ['adam', 'rmsprop']
+}
+
+# Executar busca em grade
+grid = GridSearchCV(estimator=model, param_grid=param_grid, cv=3, scoring='r2')
+grid_result = grid.fit(X_train, y_train)
+
+# Imprimir melhores resultados
+print("Melhores hiperparâmetros encontrados: ", grid_result.best_params_)
+print("Melhor R^2 encontrado: ", grid_result.best_score_)
